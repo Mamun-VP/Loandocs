@@ -1,6 +1,7 @@
+import csv as _csv
 from pathlib import Path
 import pdfplumber
-import pandas as pd
+import openpyxl
 
 SUPPORTED = {".pdf", ".csv", ".xlsx", ".xls"}
 
@@ -12,7 +13,7 @@ def extract(file_path: str) -> dict:
     if ext == ".pdf":
         return _pdf(path)
     elif ext == ".csv":
-        return _csv(path)
+        return _csv_file(path)
     return _excel(path)
 
 def _pdf(path):
@@ -26,10 +27,16 @@ def _pdf(path):
                 tables.extend(tbl)
     return {"text": "\n".join(texts), "tables": tables, "format": "pdf", "page_count": pages}
 
-def _csv(path):
-    df = pd.read_csv(str(path), dtype=str, keep_default_na=False)
-    return {"text": df.to_string(index=False), "tables": [df.columns.tolist()] + df.values.tolist(), "format": "csv", "page_count": 1}
+def _csv_file(path):
+    with open(str(path), newline="", encoding="utf-8-sig") as f:
+        rows = list(_csv.reader(f))
+    text = "\n".join("\t".join(r) for r in rows)
+    return {"text": text, "tables": rows, "format": "csv", "page_count": 1}
 
 def _excel(path):
-    df = pd.read_excel(str(path), dtype=str, keep_default_na=False)
-    return {"text": df.to_string(index=False), "tables": [df.columns.tolist()] + df.values.tolist(), "format": "xlsx", "page_count": 1}
+    wb = openpyxl.load_workbook(str(path), read_only=True, data_only=True)
+    ws = wb.active
+    rows = [[str(c.value) if c.value is not None else "" for c in row] for row in ws.iter_rows()]
+    wb.close()
+    text = "\n".join("\t".join(r) for r in rows)
+    return {"text": text, "tables": rows, "format": "xlsx", "page_count": 1}
