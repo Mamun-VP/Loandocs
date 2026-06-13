@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Arial,sans-serif;font-size:11px;color:#1a1a2e;background:#fff}
+.page{padding:10mm}
+.masthead{border-top:4px solid #1b3a6b;border-bottom:2px solid #1b3a6b;padding:10px 0 8px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:flex-end}
+.brand{font-size:18px;font-weight:700;color:#1b3a6b}
+.brand-sub{font-size:9px;color:#555;text-transform:uppercase;letter-spacing:1px;margin-top:2px}
+.meta-right{text-align:right;font-size:10px;color:#555}
+.confidential{font-size:9px;font-weight:700;color:#b91c1c;border:1px solid #b91c1c;padding:2px 6px;display:inline-block;margin-bottom:4px}
+.section-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#2e5fa3;border-bottom:1px solid #c8c8d8;padding-bottom:4px;margin:14px 0 8px}
+.account-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin-bottom:4px}
+.account-card{border:1px solid #c8c8d8;border-left:3px solid #2e5fa3;padding:8px 10px;background:#eef3fb}
+.bank-name{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#1b3a6b;margin-bottom:5px}
+.acct-table{width:100%;border-collapse:collapse}
+.acct-table td{font-size:10px;padding:2px 0;vertical-align:top}
+.acct-table td:first-child{color:#555;width:110px}
+.acct-table td:last-child{font-weight:600}
+table.rpt{width:100%;border-collapse:collapse;font-size:10px;margin-bottom:4px}
+table.rpt thead th{background:#1b3a6b;color:#fff;padding:6px 8px;text-align:center;border:1px solid #2e5fa3;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0px;white-space:nowrap}
+table.rpt thead th.left{text-align:left}
+table.rpt tbody td{padding:5px 8px;border:0.5px solid #c8c8d8;text-align:right;vertical-align:middle}
+table.rpt tbody td.left{text-align:left;font-weight:600}
+table.rpt tbody td.rmk{font-style:italic;color:#555;font-size:9px;text-align:left}
+table.rpt tbody tr:nth-child(even) td{background:#f7f8fc}
+table.rpt tfoot td{padding:5px 8px;border:1px solid #c8c8d8;text-align:right;font-weight:700}
+table.rpt tfoot tr.total td{background:#dce8f8;border-top:2px solid #2e5fa3}
+table.rpt tfoot tr.avg td{background:#eef3fb;color:#1b3a6b;border-bottom:2px solid #1b3a6b}
+table.rpt tfoot td.left{text-align:left}
+td.grand{background:#1b3a6b !important;color:#fff !important;font-weight:700;text-align:right}
+.notes-block{background:#f7f8fc;border:1px solid #c8c8d8;border-left:3px solid #2e5fa3;padding:8px 12px;margin-bottom:4px}
+.note-item{font-size:10px;color:#555;padding:3px 0;display:flex;gap:5px;line-height:1.5}
+.note-dot{color:#2e5fa3;font-size:8px;margin-top:4px;flex-shrink:0}
+.flag-box{background:#faeeda;border:1px solid #ef9f27;border-left:3px solid #ef9f27;padding:6px 10px;margin-bottom:5px;font-size:10px}
+.flag-title{font-weight:700;color:#633806;margin-bottom:2px}
+.flag-msg{color:#854f0b}
+.footer{margin-top:16px;border-top:2px solid #1b3a6b;padding-top:12px;display:flex;justify-content:space-between;align-items:flex-end}
+.footer-field label{font-size:9px;color:#555;display:block;margin-bottom:3px}
+.sig-line{border-bottom:1px solid #555;font-size:12px;font-weight:600;min-width:180px;padding-bottom:2px;min-height:18px}
+.footer-stamp{font-size:9px;color:#888;text-align:right}
+.bal-section{margin-bottom:10px}
+.bal-bank-title{font-size:10px;font-weight:700;color:#2e5fa3;margin-bottom:5px}
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="masthead">
+    <div>
+      <div class="brand">Bank Statement Analysis</div>
+      <div class="brand-sub">Lending Assessment &amp; Financial Review Report</div>
+    </div>
+    <div class="meta-right">
+      <div class="confidential">CONFIDENTIAL</div><br>
+      <strong>Report Date: {{ generated_at }}</strong><br>
+      Ref: {{ meta.loan_reference or "—" }}
+    </div>
+  </div>
+
+  <div class="section-label">1. Account Details</div>
+  <div class="account-grid">
+    {% for acct in account_details %}
+    <div class="account-card">
+      <div class="bank-name">{{ acct.bank_name }}</div>
+      <table class="acct-table">
+        <tr><td>Account No.</td><td>{{ acct.account_number_masked or "—" }}</td></tr>
+        <tr><td>Applicant</td><td>{{ acct.applicant_name or meta.applicant_name }}</td></tr>
+        <tr><td>Co-Applicant</td><td>{{ acct.co_applicant_name or meta.co_applicant_name or "—" }}</td></tr>
+        <tr><td>Account Type</td><td>{{ acct.account_type or "—" }}</td></tr>
+        <tr><td>Period From</td><td>{{ acct.statement_period_from or "—" }}</td></tr>
+        <tr><td>Period To</td><td>{{ acct.statement_period_to or "—" }}</td></tr>
+      </table>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div class="section-label">2. Monthly Credits (₹)</div>
+  {% set banks = monthly_credits | map(attribute='bank_name') | unique | list %}
+  {% set months = monthly_credits | map(attribute='month') | unique | list %}
+  <table class="rpt">
+    <thead>
+      <tr>
+        <th class="left" rowspan="2" style="width:80px">Month</th>
+        {% for bank in banks %}<th colspan="2">{{ bank }}</th>{% endfor %}
+        <th rowspan="2" style="width:160px">Remarks</th>
+      </tr>
+      <tr>{% for bank in banks %}<th>Applicant (₹)</th><th>Co-Appl. (₹)</th>{% endfor %}</tr>
+    </thead>
+    <tbody>
+      {% for month in months %}
+      <tr>
+        <td class="left">{{ month }}</td>
+        {% for bank in banks %}
+          {% set rows = monthly_credits | selectattr('month','equalto',month) | selectattr('bank_name','equalto',bank) | list %}
+          {% if rows %}
+            <td>{{ rows[0].applicant_amount | inr }}</td>
+            <td>{{ rows[0].co_applicant_amount | inr }}</td>
+          {% else %}<td>—</td><td>—</td>{% endif %}
+        {% endfor %}
+        {% set all_rows = monthly_credits | selectattr('month','equalto',month) | list %}
+        <td class="rmk">{% if all_rows and all_rows[0].is_one_time %}<em>One-time: </em>{% endif %}{{ (all_rows[0].remarks if all_rows else None) or "—" }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+    <tfoot>
+      <tr class="total">
+        <td class="left">Total</td>
+        {% for bank in banks %}{% set t = credit_totals.get(bank, {}) %}<td>{{ t.get('applicant',0) | inr }}</td><td>{{ t.get('co_applicant',0) | inr }}</td>{% endfor %}
+        <td class="rmk">Excl. one-time credits</td>
+      </tr>
+      <tr class="avg">
+        <td class="left">Avg./Month</td>
+        {% for bank in banks %}{% set a = credit_averages.get(bank, {}) %}<td>{{ a.get('applicant',0) | inr }}</td><td>{{ a.get('co_applicant',0) | inr }}</td>{% endfor %}
+        <td class="rmk">{{ ((credit_averages.values() | list | first) or {}).get('months_count', 12) }}-month basis</td>
+      </tr>
+    </tfoot>
+  </table>
+
+  <div class="section-label">3. Average Bank Balance Position (₹)</div>
+  {% for bank, months_data in balance_averages.items() %}
+  <div class="bal-section">
+    <div class="bal-bank-title">{{ bank }}</div>
+    <table class="rpt">
+      <thead><tr><th class="left" style="width:80px">Month</th><th>1st</th><th>8th</th><th>17th</th><th>25th</th><th>Monthly Avg.</th></tr></thead>
+      <tbody>
+        {% for month, vals in months_data.items() %}
+        <tr>
+          <td class="left">{{ month }}</td>
+          <td>{{ vals.day_1 | inr }}</td><td>{{ vals.day_8 | inr }}</td>
+          <td>{{ vals.day_17 | inr }}</td><td>{{ vals.day_25 | inr }}</td>
+          <td>{{ vals.monthly_avg | inr }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+      <tfoot>
+        <tr><td colspan="5" class="grand">Grand Average Balance</td><td class="grand">{{ grand_balance_averages.get(bank) | inr }}</td></tr>
+      </tfoot>
+    </table>
+  </div>
+  {% endfor %}
+
+  {% if notes %}
+  <div class="section-label">4. Supporting Notes</div>
+  <div class="notes-block">
+    {% for note in notes %}<div class="note-item"><span class="note-dot">◆</span>{{ note }}</div>{% endfor %}
+  </div>
+  {% endif %}
+
+  {% if ai_flags %}
+  <div class="section-label">5. AI Confidence Flags — Manual Review Required</div>
+  {% for flag in ai_flags %}
+  <div class="flag-box">
+    <div class="flag-title">⚠ {{ flag.field }} — {{ flag.severity | upper }}</div>
+    <div class="flag-msg">{{ flag.message }} (Confidence: {{ flag.confidence | pct }})</div>
+  </div>
+  {% endfor %}
+  {% endif %}
+
+  <div class="footer">
+    <div style="display:flex;gap:40px">
+      <div class="footer-field"><label>Prepared by (Appraiser)</label><div class="sig-line">{{ meta.appraiser_name or "" }}</div></div>
+      <div class="footer-field"><label>Date</label><div class="sig-line">{{ generated_at.split(',')[0] }}</div></div>
+      <div class="footer-field"><label>Reviewed by</label><div class="sig-line">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</div></div>
+    </div>
+    <div class="footer-stamp">Generated by LoanDocs AI · {{ meta.loan_reference or "" }}<br>Confidential — Internal Use Only · All figures in Indian Rupees (₹)</div>
+  </div>
+</div>
+</body>
+</html>
